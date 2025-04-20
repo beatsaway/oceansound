@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean Sound v1.01</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: opacity 0.3s ease;
+            position: relative;
+            opacity: 0.8;
+        }
+        .container.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .title {
+            margin: 0;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 3px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .control-group label {
+            min-width: 40px;
+            font-size: 0.8em;
+            color: #666;
+            margin-right: 2px;
+        }
+        select, button, input {
+            padding: 2px 4px;
+            margin: 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            font-size: 0.8em;
+            width: 100%;
+            background-color: white;
+        }
+        input[type="range"] {
+            width: 100%;
+            min-width: 80px;
+            padding: 0;
+        }
+        input[type="number"] {
+            width: 40px;
+            text-align: center;
+        }
+        .dice-button {
+            padding: 0;
+            margin: 0;
+            font-size: 1.1em;
+            line-height: 1;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .dice-button.active {
+            opacity: 1;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .action-buttons button {
+            flex: 1;
+            padding: 8px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #playBtn {
+            background-color: #4CAF50;
+        }
+        #playBtn:hover {
+            background-color: #45a049;
+        }
+        #playBtn.playing {
+            background-color: #f44336;
+        }
+        #playBtn.playing:hover {
+            background-color: #da190b;
+        }
+        #addBarBtn {
+            background-color: #2196F3;
+        }
+        #addBarBtn:hover {
+            background-color: #0b7dda;
+        }
+        .bar-list {
+            margin: 10px 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .bar-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+        .bar-item:last-child {
+            border-bottom: none;
+        }
+        .bar-item.active {
+            background-color: #e7f5ff;
+            border-left: 3px solid #2196F3;
+        }
+        .bar-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            font-size: 0.75em;
+        }
+        .bar-info span {
+            font-weight: bold;
+            color: #333;
+            margin-left: 2px;
+        }
+        .bar-controls {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+        }
+        .bar-controls button {
+            padding: 2px 6px;
+            background-color: transparent;
+            color: #999;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .bar-controls button:hover {
+            background-color: #f44336;
+            color: white;
+        }
+        .notes-display {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .notes-row {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .chord-notes {
+            background-color: #ebfbee;
+        }
+        .note {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 2px;
+            background-color: white;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.8em;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .chord-note {
+            background-color: #d1e7dd;
+        }
+        .bass-note {
+            background-color: #f8d7da;
+        }
+        .notes-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #495057;
+            font-size: 0.8em;
+        }
+        .beat-pattern {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .beat-unit {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+            background-color: white;
+            border-radius: 3px;
+            font-family: monospace;
+            font-size: 0.9em;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .beat-duration {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .beat-unit.active {
+            background-color: #e7f5ff;
+            border: 1px solid #2196F3;
+        }
+        .toggle-hint {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.8em;
+            color: #666;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toggle-hint">Press 'm' to show/hide this menu</div>
+        <div class="header">
+            <h1 class="title">Ocean Sound V1.01</h1>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="keySelect">Key:</label>
+                <select id="keySelect"></select>
+                <button class="dice-button" id="randomKey">🎲</button>
+            </div>
+            
+            <div class="control-group">
+                <label for="scaleSelect">Scale:</label>
+                <select id="scaleSelect"></select>
+                <button class="dice-button" id="randomScale">🎲</button>
+            </div>
+            
+            <div class="control-group">
+                <label for="chordSelect">Chords:</label>
+                <select id="chordSelect"></select>
+                <button class="dice-button" id="randomChords">🎲</button>
+            </div>
+
+            <div class="control-group">
+                <label for="beatPatternSelect">Beat:</label>
+                <select id="beatPatternSelect"></select>
+                <button class="dice-button" id="randomBeat">🎲</button>
+            </div>
+
+            <div class="control-group">
+                <label for="bpmInput">BPM:</label>
+                <input type="number" id="bpmInput" value="120" min="40" max="200">
+            </div>
+
+            <div class="control-group">
+                <label for="scaleNoteProbability">Scale %:</label>
+                <input type="number" id="scaleNoteProbability" value="33" min="0" max="100">
+            </div>
+
+            <div class="control-group">
+                <label for="pitchDrop">Pitch Drop:</label>
+                <input type="range" id="pitchDrop" min="0" max="1" step="0.1" value="0.2">
+            </div>
+
+            <div class="control-group">
+                <label for="decayTime">Decay:</label>
+                <input type="range" id="decayTime" min="0" max="1" step="0.1" value="0.2">
+            </div>
+
+            <div class="control-group">
+                <label for="noiseAmount">Noise:</label>
+                <input type="range" id="noiseAmount" min="0" max="1" step="0.1" value="0.2">
+            </div>
+
+            <div class="control-group">
+                <label for="reverbAmount">Reverb:</label>
+                <input type="range" id="reverbAmount" min="0" max="1" step="0.1" value="0.7">
+            </div>
+
+            <div class="control-group">
+                <label>Timbre:</label>
+                <button class="dice-button" id="randomTimbre">🎲</button>
+            </div>
+        </div>
+        
+        <div class="action-buttons">
+            <button id="addBarBtn">Add Bar</button>
+            <button id="playBtn">Play</button>
+        </div>
+        
+        <div class="bar-list" id="barList"></div>
+        <div class="notes-display">
+            <div class="notes-row chord-notes">
+                <div class="notes-label">Chord Notes:</div>
+                <div id="chordNotesDisplay"></div>
+            </div>
+        </div>
+        <div class="beat-pattern" id="beatPatternDisplay"></div>
+    </div>
+
+    <script src="scalechordlist.js"></script>
+    <script src="beatlist.js"></script>
+    <script src="waterSynth.js"></script>
+    <script src="visualEffects.js"></script>
+    <script>
+        // Audio context and oscillator setup
+        let waterSynth;
+        let isPlaying = false;
+        let currentNotes = new Set(); // Use Set to track active notes
+        let chordInterval;
+        let scaleInterval;
+        let currentChordIndex = 0;
+        let currentBarIndex = 0;
+        let currentBeatIndex = 0;
+        let currentBeat = 1;
+        let bars = [];
+        let beatPatternRepetitions = 0; // Track beat pattern repetitions
+        let lastScaleNoteIndex = -1; // Track the last played scale note index
+        let lastDirection = 0; // Track the last movement direction (-1 for down, 0 for same, 1 for up)
+        let directionPersistence = 0; // Track how many steps in the same direction
+
+        // DOM elements
+        const keySelect = document.getElementById('keySelect');
+        const scaleSelect = document.getElementById('scaleSelect');
+        const chordSelect = document.getElementById('chordSelect');
+        const beatPatternSelect = document.getElementById('beatPatternSelect');
+        const bpmInput = document.getElementById('bpmInput');
+        const scaleNoteProbability = document.getElementById('scaleNoteProbability');
+        const pitchDrop = document.getElementById('pitchDrop');
+        const decayTime = document.getElementById('decayTime');
+        const noiseAmount = document.getElementById('noiseAmount');
+        const reverbAmount = document.getElementById('reverbAmount');
+        const addBarBtn = document.getElementById('addBarBtn');
+        const playBtn = document.getElementById('playBtn');
+        const barList = document.getElementById('barList');
+        const chordNotesDisplay = document.getElementById('chordNotesDisplay');
+        const beatPatternDisplay = document.getElementById('beatPatternDisplay');
+        const container = document.querySelector('.container');
+
+        // Random checkboxes
+        const randomKeyButton = document.getElementById('randomKey');
+        const randomScaleButton = document.getElementById('randomScale');
+        const randomChordsButton = document.getElementById('randomChords');
+        const randomBeatButton = document.getElementById('randomBeat');
+
+        // Add random timbre button to initialization
+        const randomTimbreButton = document.getElementById('randomTimbre');
+        
+        // Add click handler for timbre dice button
+        randomTimbreButton.addEventListener('click', () => {
+            randomTimbreButton.classList.toggle('active');
+        });
+
+        // Initialize random buttons
+        randomChordsButton.classList.add('active');
+        randomBeatButton.classList.add('active');
+        randomScaleButton.classList.add('active');
+
+        // Add click handlers for dice buttons
+        randomKeyButton.addEventListener('click', () => {
+            randomKeyButton.classList.toggle('active');
+        });
+        randomScaleButton.addEventListener('click', () => {
+            randomScaleButton.classList.toggle('active');
+        });
+        randomChordsButton.addEventListener('click', () => {
+            randomChordsButton.classList.toggle('active');
+        });
+        randomBeatButton.addEventListener('click', () => {
+            randomBeatButton.classList.toggle('active');
+        });
+
+        // Function to get random option from select
+        function getRandomOption(selectElement) {
+            const options = Array.from(selectElement.options);
+            const randomIndex = Math.floor(Math.random() * options.length);
+            return options[randomIndex].value;
+        }
+
+        // Bar class
+        class Bar {
+            constructor(options) {
+                this.key = options.randomKey ? getRandomOption(keySelect) : options.key;
+                this.scale = options.randomScale ? getRandomOption(scaleSelect) : options.scale;
+                this.chords = options.randomChords ? getRandomOption(chordSelect) : options.chords;
+                this.beat = options.randomBeat ? getRandomOption(beatPatternSelect) : options.beat;
+                this.bpm = options.bpm;
+                this.scaleNoteProbability = options.scaleNoteProbability;
+                this.randomKey = options.randomKey;
+                this.randomScale = options.randomScale;
+                this.randomChords = options.randomChords;
+                this.randomBeat = options.randomBeat;
+                this.randomTimbre = options.randomTimbre;
+            }
+
+            getInfo() {
+                return {
+                    key: this.key,
+                    scale: this.scale,
+                    chords: this.chords,
+                    beat: this.beat,
+                    bpm: this.bpm,
+                    scaleNoteProbability: this.scaleNoteProbability,
+                    randomKey: randomKeyButton.classList.contains('active'),
+                    randomScale: randomScaleButton.classList.contains('active'),
+                    randomChords: randomChordsButton.classList.contains('active'),
+                    randomBeat: randomBeatButton.classList.contains('active'),
+                    randomTimbre: randomTimbreButton.classList.contains('active')
+                };
+            }
+        }
+
+        // Function to create bar element
+        function createBarElement(bar, index) {
+            const barElement = document.createElement('div');
+            barElement.className = 'bar-item';
+            barElement.dataset.index = index;
+
+            const info = bar.getInfo();
+            barElement.innerHTML = `
+                <div class="bar-info">
+                    <div>Key: <span>${info.key}${info.randomKey ? ' (R)' : ''}</span></div>
+                    <div>Scale: <span>${info.scale}${info.randomScale ? ' (R)' : ''}</span></div>
+                    <div>Chords: <span>${info.chords}${info.randomChords ? ' (R)' : ''}</span></div>
+                    <div>Beat: <span>${info.beat}${info.randomBeat ? ' (R)' : ''}</span></div>
+                    <div>BPM: <span>${info.bpm}</span></div>
+                    <div>Scale %: <span>${info.scaleNoteProbability}</span></div>
+                </div>
+                <div class="bar-controls">
+                    <button onclick="removeBar(${index})">×</button>
+                </div>
+            `;
+
+            return barElement;
+        }
+
+        // Function to add bar
+        function addBar() {
+            const options = {
+                key: keySelect.value,
+                scale: scaleSelect.value,
+                chords: chordSelect.value,
+                beat: beatPatternSelect.value,
+                bpm: parseInt(bpmInput.value),
+                scaleNoteProbability: parseInt(scaleNoteProbability.value),
+                randomKey: randomKeyButton.classList.contains('active'),
+                randomScale: randomScaleButton.classList.contains('active'),
+                randomChords: randomChordsButton.classList.contains('active'),
+                randomBeat: randomBeatButton.classList.contains('active'),
+                randomTimbre: randomTimbreButton.classList.contains('active')
+            };
+
+            const bar = new Bar(options);
+            bars.push(bar);
+            const barElement = createBarElement(bar, bars.length - 1);
+            barList.appendChild(barElement);
+            
+            // Randomize timbre if enabled
+            if (options.randomTimbre) {
+                randomizeTimbre();
+            }
+        }
+
+        // Function to remove bar
+        function removeBar(index) {
+            bars.splice(index, 1);
+            updateBarList();
+        }
+
+        // Function to update bar list
+        function updateBarList() {
+            barList.innerHTML = '';
+            bars.forEach((bar, index) => {
+                const barElement = createBarElement(bar, index);
+                if (index === currentBarIndex && isPlaying) {
+                    barElement.classList.add('active');
+                }
+                barList.appendChild(barElement);
+            });
+        }
+
+        // Function to update beat pattern display
+        function updateBeatPatternDisplay() {
+            const currentBar = bars[currentBarIndex];
+            if (!currentBar) return;
+            
+            const info = currentBar.getInfo();
+            const currentBeatPattern = beatPatterns.find(p => p.name === info.beat);
+            if (!currentBeatPattern) return;
+            
+            const beatPatternDisplay = document.getElementById('beatPatternDisplay');
+            beatPatternDisplay.innerHTML = '';
+            
+            const beats = currentBeatPattern.pattern.split(', ').map(Number);
+            const beatDuration = 60 / info.bpm; // Duration of one beat in seconds
+            
+            beats.forEach((beat, index) => {
+                const beatUnit = document.createElement('div');
+                beatUnit.className = `beat-unit ${index === currentBeatIndex ? 'active' : ''}`;
+                
+                const duration = document.createElement('div');
+                duration.className = 'beat-duration';
+                duration.textContent = `${(beat * beatDuration).toFixed(2)}s`;
+                
+                beatUnit.appendChild(duration);
+                beatPatternDisplay.appendChild(beatUnit);
+            });
+        }
+
+        // Function to get next scale note index based on melodic rules
+        function getNextScaleNoteIndex(scale, lastIndex) {
+            if (lastIndex === -1) {
+                // First note, choose randomly
+                return Math.floor(Math.random() * scale.length);
+            }
+
+            const random = Math.random();
+            
+            // 30% chance to repeat the same note
+            if (random < 0.3) {
+                lastDirection = 0;
+                directionPersistence = 0;
+                return lastIndex;
+            }
+
+            // 30% chance to play a neighboring note
+            if (random < 0.6) {
+                const direction = Math.random() < 0.5 ? 1 : -1;
+                const newIndex = lastIndex + direction;
+                
+                // Check bounds
+                if (newIndex >= 0 && newIndex < scale.length) {
+                    lastDirection = direction;
+                    directionPersistence = 1;
+                    return newIndex;
+                }
+            }
+
+            // 30% chance to play a note two steps away
+            if (random < 0.9) {
+                const direction = Math.random() < 0.5 ? 2 : -2;
+                const newIndex = lastIndex + direction;
+                
+                // Check bounds
+                if (newIndex >= 0 && newIndex < scale.length) {
+                    lastDirection = direction > 0 ? 1 : -1;
+                    directionPersistence = 1;
+                    return newIndex;
+                }
+            }
+
+            // If we get here, choose a random note but consider direction persistence
+            let newIndex;
+            if (directionPersistence > 0 && Math.random() < 0.6) {
+                // 60% chance to continue in same direction
+                newIndex = lastIndex + lastDirection;
+                if (newIndex >= 0 && newIndex < scale.length) {
+                    directionPersistence++;
+                    return newIndex;
+                }
+            }
+
+            // If continuing in same direction isn't possible or we don't want to,
+            // choose a random note but avoid large leaps
+            do {
+                newIndex = Math.floor(Math.random() * scale.length);
+            } while (Math.abs(newIndex - lastIndex) > 3);
+
+            // Update direction tracking
+            lastDirection = newIndex > lastIndex ? 1 : -1;
+            directionPersistence = 1;
+            return newIndex;
+        }
+
+        // Function to play chord
+        function playChord() {
+            if (bars.length === 0) return;
+
+            const currentBar = bars[currentBarIndex];
+            const info = currentBar.getInfo();
+            const bpm = info.bpm;
+            const barDuration = (60 / bpm) * 4; // Duration of one bar in seconds
+            const selectedProgression = chordProgressions.find(p => p.name === info.chords);
+            const baseFrequency = noteFrequencies[info.key];
+            
+            // Play chord for the entire bar
+            chordNotesDisplay.innerHTML = '';
+            const chord = selectedProgression.progression[currentChordIndex];
+            const chordRatios = chordFrequencyRatios[chord];
+            
+            if (chordRatios) {
+                chordRatios.forEach(ratio => {
+                    const frequency = baseFrequency * ratio;
+                    const oscillator = playNote(
+                        frequency, 
+                        barDuration, 
+                        parseFloat(pitchDrop.value),
+                        parseFloat(decayTime.value),
+                        parseFloat(noiseAmount.value),
+                        parseFloat(reverbAmount.value)
+                    );
+                    if (oscillator) {
+                        currentNotes.add(oscillator);
+                        displayNote(frequency, 'chord');
+                        
+                        // Schedule cleanup after note duration
+                        setTimeout(() => {
+                            if (oscillator.stop) {
+                                oscillator.stop();
+                            }
+                            currentNotes.delete(oscillator);
+                        }, barDuration * 1000);
+                    }
+                });
+                
+                const lowestFrequency = baseFrequency * chordRatios[0] * 0.5;
+                const bassOscillator = playNote(
+                    lowestFrequency, 
+                    barDuration, 
+                    parseFloat(pitchDrop.value),
+                    parseFloat(decayTime.value),
+                    parseFloat(noiseAmount.value),
+                    parseFloat(reverbAmount.value)
+                );
+                if (bassOscillator) {
+                    currentNotes.add(bassOscillator);
+                    displayNote(lowestFrequency, 'chord');
+                    
+                    // Schedule cleanup for bass note
+                    setTimeout(() => {
+                        if (bassOscillator.stop) {
+                            bassOscillator.stop();
+                        }
+                        currentNotes.delete(bassOscillator);
+                    }, barDuration * 1000);
+                }
+            }
+
+            // Move to next chord
+            currentChordIndex = (currentChordIndex + 1) % selectedProgression.progression.length;
+            
+            // Only move to next bar if we've completed the chord progression
+            if (currentChordIndex === 0) {
+                currentBarIndex = (currentBarIndex + 1) % bars.length;
+            }
+            
+            updateBarList();
+        }
+
+        // Function to play scale note
+        function playScaleNote() {
+            if (bars.length === 0) return;
+
+            const currentBar = bars[currentBarIndex];
+            const info = currentBar.getInfo();
+            const bpm = info.bpm;
+            const beatDuration = 60 / bpm; // Duration of one beat in seconds
+            const scale = scaleFrequencyRatios[info.scale];
+            const baseFrequency = noteFrequencies[info.key];
+            const skipProbability = info.scaleNoteProbability / 100;
+            const currentBeatPattern = beatPatterns.find(p => p.name === info.beat);
+
+            if (currentBeatPattern && Math.random() >= skipProbability) {
+                const beats = currentBeatPattern.pattern.split(', ').map(Number);
+                const currentBeatValue = beats[currentBeatIndex];
+                
+                if (currentBeatValue > 0) {
+                    // Get next note index using melodic rules
+                    const scaleIndex = getNextScaleNoteIndex(scale, lastScaleNoteIndex);
+                    lastScaleNoteIndex = scaleIndex;
+                    
+                    const frequency = baseFrequency * scale[scaleIndex] * 2;
+                    
+                    // Calculate actual note duration based on the current beat value
+                    const noteDuration = currentBeatValue * beatDuration;
+                    
+                    // Play note with duration based on the beat value
+                    const oscillator = playNote(
+                        frequency, 
+                        noteDuration, 
+                        parseFloat(pitchDrop.value),
+                        parseFloat(decayTime.value),
+                        parseFloat(noiseAmount.value),
+                        parseFloat(reverbAmount.value)
+                    );
+                    if (oscillator) {
+                        currentNotes.add(oscillator);
+                        
+                        // Schedule cleanup after the proper note duration
+                        setTimeout(() => {
+                            if (oscillator.stop) {
+                                oscillator.stop();
+                            }
+                            currentNotes.delete(oscillator);
+                        }, noteDuration * 1000); // Convert to milliseconds
+                    }
+                }
+                
+                currentBeatIndex = (currentBeatIndex + 1) % beats.length;
+                
+                // Check if we've completed a full beat pattern cycle
+                if (currentBeatIndex === 0) {
+                    beatPatternRepetitions++;
+                    const selectedProgression = chordProgressions.find(p => p.name === info.chords);
+                    
+                    // If we've completed enough repetitions for the chord progression, reset
+                    if (beatPatternRepetitions >= selectedProgression.progression.length) {
+                        beatPatternRepetitions = 0;
+                    }
+                }
+                
+                updateBeatPatternDisplay();
+
+                // Set up next scale note timing
+                const nextBeatValue = beats[currentBeatIndex];
+                const nextInterval = nextBeatValue * beatDuration * 1000; // Convert to milliseconds
+                
+                // Clear existing timeout and set new one
+                if (scaleInterval) {
+                    clearTimeout(scaleInterval);
+                }
+                scaleInterval = setTimeout(playScaleNote, nextInterval);
+            } else {
+                // If we skip this note due to probability, set up for the next beat
+                const beats = currentBeatPattern.pattern.split(', ').map(Number);
+                currentBeatIndex = (currentBeatIndex + 1) % beats.length;
+                const nextBeatValue = beats[currentBeatIndex];
+                const nextInterval = nextBeatValue * beatDuration * 1000;
+                
+                if (scaleInterval) {
+                    clearTimeout(scaleInterval);
+                }
+                scaleInterval = setTimeout(playScaleNote, nextInterval);
+            }
+        }
+
+        // Add visual effects instance
+        let visualEffects = null;
+
+        // Initialize visual effects when starting playback
+        function startPlaying() {
+            if (bars.length === 0) {
+                alert('Please add at least one bar first');
+                return;
+            }
+
+            if (!waterSynth) {
+                waterSynth = new WaterSynth();
+            }
+            
+            if (!visualEffects) {
+                visualEffects = new VisualEffects();
+            }
+            
+            isPlaying = true;
+            currentChordIndex = 0;
+            currentBarIndex = 0;
+            currentBeatIndex = 0;
+            currentBeat = 1;
+            beatPatternRepetitions = 0;
+            lastScaleNoteIndex = -1; // Reset scale note tracking
+            lastDirection = 0;
+            directionPersistence = 0;
+            
+            // Clear displays
+            chordNotesDisplay.innerHTML = '';
+            updateBarList();
+            updateBeatPatternDisplay();
+            
+            // Start chord progression (one chord per beat pattern cycle)
+            const bpm = bars[0].getInfo().bpm;
+            const currentBar = bars[currentBarIndex];
+            const info = currentBar.getInfo();
+            const currentBeatPattern = beatPatterns.find(p => p.name === info.beat);
+            const beats = currentBeatPattern.pattern.split(', ').map(Number);
+            const beatDuration = 60 / bpm; // Duration of one beat in seconds
+            const beatPatternDuration = beats.reduce((sum, beat) => sum + beat, 0) * beatDuration;
+            chordInterval = setInterval(playChord, beatPatternDuration * 1000);
+            
+            // Start scale notes with initial timing
+            const initialInterval = beats[0] * beatDuration * 1000; // Convert to milliseconds
+            scaleInterval = setTimeout(playScaleNote, initialInterval);
+        }
+
+        // Stop playing
+        function stopPlaying() {
+            isPlaying = false;
+            
+            if (chordInterval) {
+                clearInterval(chordInterval);
+                chordInterval = null;
+            }
+            
+            if (scaleInterval) {
+                clearTimeout(scaleInterval);
+                scaleInterval = null;
+            }
+            
+            // Stop all active notes and clear the set
+            currentNotes.forEach(oscillator => {
+                if (oscillator.stop) {
+                    oscillator.stop();
+                }
+            });
+            currentNotes.clear();
+            
+            // Clear any remaining timeouts
+            const highestTimeoutId = window.setTimeout(() => {}, 0);
+            for (let i = 0; i < highestTimeoutId; i++) {
+                window.clearTimeout(i);
+            }
+            
+            chordNotesDisplay.innerHTML = '';
+            updateBarList();
+
+            if (visualEffects) {
+                visualEffects.stop();
+                visualEffects = null;
+            }
+        }
+
+        // Event listeners
+        addBarBtn.addEventListener('click', addBar);
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                stopPlaying();
+                playBtn.textContent = 'Play';
+                playBtn.classList.remove('playing');
+            } else {
+                startPlaying();
+                playBtn.textContent = 'Stop';
+                playBtn.classList.add('playing');
+            }
+        });
+
+        // Add keyboard shortcut for toggling container visibility
+        document.addEventListener('keydown', (event) => {
+            if (event.key.toLowerCase() === 'm') {
+                container.classList.toggle('hidden');
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            populateKeys();
+            populateScales();
+            populateChords();
+            populateBeatPatterns();
+            
+            // Set random checkboxes for chords and beats to checked by default
+            randomChordsButton.classList.add('active');
+            randomBeatButton.classList.add('active');
+            randomScaleButton.classList.add('active');
+
+            // Randomize initial selections
+            keySelect.value = getRandomOption(keySelect);
+            scaleSelect.value = getRandomOption(scaleSelect);
+            chordSelect.value = getRandomOption(chordSelect);
+            beatPatternSelect.value = getRandomOption(beatPatternSelect);
+
+            // Set BPM to a reasonable default
+            bpmInput.value = 120;
+            scaleNoteProbability.value = 33;
+
+            // Add initial bar
+            addBar();
+        });
+
+        // Make removeBar function available globally
+        window.removeBar = removeBar;
+
+        // Function to get note name from frequency
+        function getNoteName(frequency) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const A4 = 440;
+            const C0 = A4 * Math.pow(2, -4.75);
+            const h = Math.round(12 * Math.log2(frequency / C0));
+            const octave = Math.floor(h / 12);
+            const note = notes[h % 12];
+            return note + octave;
+        }
+
+        // Function to display a note
+        function displayNote(frequency, type) {
+            const noteName = getNoteName(frequency);
+            const noteElement = document.createElement('span');
+            noteElement.className = `note ${type}-note`;
+            noteElement.textContent = noteName;
+            
+            if (type === 'scale') {
+                scaleNotesDisplay.appendChild(noteElement);
+            } else {
+                chordNotesDisplay.appendChild(noteElement);
+            }
+            
+            // Clear the display after 5 seconds
+            setTimeout(() => {
+                noteElement.remove();
+            }, 5000);
+        }
+
+        // Populate key select
+        function populateKeys() {
+            const octaves = [3, 4, 5];
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            
+            notes.forEach(note => {
+                octaves.forEach(octave => {
+                    const noteName = note + octave;
+                    if (noteFrequencies[noteName]) {
+                        const option = document.createElement('option');
+                        option.value = noteName;
+                        option.textContent = noteName;
+                        keySelect.appendChild(option);
+                    }
+                });
+            });
+            
+            // Set default to C4
+            keySelect.value = 'C4';
+        }
+
+        // Populate scale select
+        function populateScales() {
+            for (const scale in scaleFrequencyRatios) {
+                const option = document.createElement('option');
+                option.value = scale;
+                option.textContent = scale;
+                scaleSelect.appendChild(option);
+            }
+        }
+
+        // Populate chord progression select
+        function populateChords() {
+            for (const progression of chordProgressions) {
+                const option = document.createElement('option');
+                option.value = progression.name;
+                option.textContent = progression.name;
+                chordSelect.appendChild(option);
+            }
+        }
+
+        // Populate beat pattern select
+        function populateBeatPatterns() {
+            beatPatterns.forEach(pattern => {
+                const option = document.createElement('option');
+                option.value = pattern.name;
+                option.textContent = pattern.name;
+                beatPatternSelect.appendChild(option);
+            });
+        }
+
+        // Add event listeners for timbre controls
+        pitchDrop.addEventListener('input', updateTimbre);
+        decayTime.addEventListener('input', updateTimbre);
+        noiseAmount.addEventListener('input', updateTimbre);
+        reverbAmount.addEventListener('input', updateTimbre);
+
+        // Function to update timbre for all active notes
+        function updateTimbre() {
+            if (!isPlaying) return;
+
+            const currentBar = bars[currentBarIndex];
+            const info = currentBar.getInfo();
+            const bpm = info.bpm;
+            const barDuration = (60 / bpm) * 4; // Duration of one bar in seconds
+
+            // Update all active notes with new timbre settings
+            currentNotes.forEach(oscillator => {
+                if (oscillator.updateTimbre) {
+                    oscillator.updateTimbre(
+                        parseFloat(pitchDrop.value),
+                        parseFloat(decayTime.value),
+                        parseFloat(noiseAmount.value),
+                        parseFloat(reverbAmount.value)
+                    );
+                }
+            });
+        }
+
+        // Function to randomize timbre parameters
+        function randomizeTimbre() {
+            if (!randomTimbreButton.classList.contains('active')) return;
+            
+            // Ensure decay time is never 0
+            const minDecay = 0.1;
+            const maxDecay = 1;
+            decayTime.value = (Math.random() * (maxDecay - minDecay) + minDecay).toFixed(1);
+            
+            // Randomize other parameters
+            pitchDrop.value = Math.random().toFixed(1);
+            noiseAmount.value = Math.random().toFixed(1);
+            reverbAmount.value = Math.random().toFixed(1);
+            
+            // Update timbre for active notes
+            updateTimbre();
+        }
+
+        function playNote(frequency, duration, pitchDrop, decayTime, noiseAmount, reverbAmount) {
+            if (!waterSynth) return null;
+            
+            const oscillator = waterSynth.playNote(frequency, duration, pitchDrop, decayTime, noiseAmount, reverbAmount);
+            
+            // Trigger random wave pattern
+            if (visualEffects) {
+                const patterns = ['round', 'square', 'triangle'];
+                const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+                visualEffects.triggerWave(randomPattern);
+            }
+            
+            return oscillator;
+        }
+    </script>
+</body>
+</html> 
