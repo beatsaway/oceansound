@@ -49,6 +49,14 @@
             opacity: 0.8;
         }
 
+        .keyboard-info {
+            text-align: center;
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            margin-top: 10px;
+        }
+
         .keyboard-container {
             position: relative;
             margin: 15px 0;
@@ -117,6 +125,17 @@
             font-size: 10px;
             color: #666;
             font-weight: bold;
+        }
+
+        .key-shortcut {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #fff;
+            font-weight: bold;
+            padding: 2px 5px;
         }
 
         .current-note {
@@ -234,12 +253,24 @@
         let waterSynth;
         let isAudioStarted = false;
         let activeKeys = new Map();
+        let isKeyPressed = new Map();
 
         // MIDI note configuration
         const OCTAVE_RANGE = 3; // Show 3 octaves (C4-B6)
         const START_OCTAVE = 4;
         const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
         const blackKeys = [1, 3, 6, 8, 10]; // C#, D#, F#, G#, A# positions
+        
+        // PC keyboard mapping using physical key codes
+        const keyboardMap = {
+            'KeyA': 60, 'KeyS': 62, 'KeyD': 64, 'KeyF': 65, 'KeyG': 67, 'KeyH': 69, 'KeyJ': 71, 'KeyK': 72, 'KeyL': 74, 'Semicolon': 76, 'Quote': 77, 'Backslash': 79,
+            'KeyW': 61, 'KeyE': 63, 'KeyT': 66, 'KeyY': 68, 'KeyU': 70, 'KeyO': 73, 'KeyP': 75, 'BracketRight': 78
+        };
+        
+        // Scale navigation
+        let currentOctave = START_OCTAVE;
+        const MIN_OCTAVE = 2;
+        const MAX_OCTAVE = 6;
         
         // Initialize audio context on first interaction
         function initAudio() {
@@ -272,19 +303,19 @@
                     } else {
                         key.className += ' white';
                         key.style.left = (whiteKeyIndex * whiteKeyWidth) + 'px';
-                        whiteKeyIndex++;
                         
                         // Add note label
                         const label = document.createElement('span');
                         label.className = 'key-label';
                         label.textContent = noteName;
                         key.appendChild(label);
+                        
+                        whiteKeyIndex++;
                     }
                     
                     // Add mouse event listeners for clicks
                     key.addEventListener('mousedown', function(e) {
                         e.preventDefault();
-                        // Initialize audio on first click
                         initAudio();
                         const velocity = 100; // Default velocity for mouse clicks
                         handleNoteOn(parseInt(this.dataset.midi), velocity);
@@ -366,6 +397,15 @@
             const frequency = midiNoteToFrequency(midiNote);
             const normalizedVelocity = velocity / 127;
             
+            // Map velocity to volume - use master gain for velocity control
+            const volumeGain = 0.3 + normalizedVelocity * 0.7; // Scale from 30% to 100%
+            const currentMasterGain = waterSynth.masterGain.gain.value;
+            waterSynth.masterGain.gain.setValueAtTime(currentMasterGain, waterSynth.audioContext.currentTime);
+            waterSynth.masterGain.gain.linearRampToValueAtTime(
+                volumeGain, 
+                waterSynth.audioContext.currentTime + 0.01
+            );
+            
             // Map velocity to noise level
             const noiseAmount = 0.1 + normalizedVelocity * 0.3; // Dynamic noise based on velocity
             
@@ -381,6 +421,12 @@
                 const harmonicAmount = (normalizedVelocity - 0.6) * 0.5;
                 waterSynth.playNote(frequency * 2, decayTime * 0.4, pitchDrop * 1.2, decayTime * 0.4, harmonicAmount);
             }
+            
+            // Reset master gain after note plays
+            waterSynth.masterGain.gain.linearRampToValueAtTime(
+                currentMasterGain, 
+                waterSynth.audioContext.currentTime + 0.5
+            );
         }
 
         // Handle MIDI messages
@@ -389,7 +435,7 @@
             const type = command & 0xf0;
 
             if (type === 144 && velocity > 0) { // Note On
-                // MIDI doesn't need audio initialization
+                initAudio();  // Initialize audio for MIDI
                 handleNoteOn(note, velocity);
             } else if (type === 128 || (type === 144 && velocity === 0)) { // Note Off
                 handleNoteOff(note);
@@ -428,6 +474,47 @@
                 log('Web MIDI API not supported');
             }
         }
+
+        // Handle PC keyboard input
+        document.addEventListener('keydown', function(e) {
+            console.log('Key down:', e.code, 'Shift:', e.shiftKey);
+            
+            // Handle scale navigation
+            if (e.code === 'Minus' || e.code === 'NumpadSubtract') {
+                if (currentOctave > MIN_OCTAVE) {
+                    currentOctave--;
+                    log(`Octave down: ${currentOctave}`);
+                }
+                return;
+            }
+            if (e.code === 'Equal' || e.code === 'NumpadAdd') {
+                if (currentOctave < MAX_OCTAVE) {
+                    currentOctave++;
+                    log(`Octave up: ${currentOctave}`);
+                }
+                return;
+            }
+
+            if (keyboardMap[e.code] && !isKeyPressed.get(e.code)) {
+                e.preventDefault();
+                initAudio();
+                isKeyPressed.set(e.code, true);
+                const midiNote = keyboardMap[e.code] + (currentOctave - START_OCTAVE) * 12;
+                const velocity = 100; // Default velocity for keyboard
+                handleNoteOn(midiNote, velocity);
+            }
+        });
+
+        document.addEventListener('keyup', function(e) {
+            console.log('Key up:', e.code, 'Shift:', e.shiftKey);
+            
+            if (keyboardMap[e.code]) {
+                e.preventDefault();
+                isKeyPressed.set(e.code, false);
+                const midiNote = keyboardMap[e.code] + (currentOctave - START_OCTAVE) * 12;
+                handleNoteOff(midiNote);
+            }
+        });
 
         // Initialize
         window.onload = function() {
