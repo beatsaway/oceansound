@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ocean Sound V1.01</title>
+    <title>Ocean Sound V1.02</title>
     <style>
         * {
             margin: 0;
@@ -42,12 +42,19 @@
             font-size: 1rem;
             letter-spacing: 2px;
             opacity: 0.7;
-            margin-bottom: 4rem;
+            margin-bottom: 2rem;
             opacity: 0;
             animation: fadeIn 2s ease 0.5s forwards;
         }
         
-        .enter-btn {
+        .buttons-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+        
+        .entry-btn {
             display: inline-block;
             padding: 15px 40px;
             background: rgba(255, 255, 255, 0.1);
@@ -61,12 +68,21 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
             opacity: 0;
             animation: fadeIn 2s ease 1s forwards;
+            min-width: 200px;
         }
         
-        .enter-btn:hover {
+        .entry-btn:hover {
             background: rgba(255, 255, 255, 0.2);
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-description {
+            font-size: 0.8rem;
+            margin-top: 10px;
+            opacity: 0;
+            animation: fadeIn 2s ease 1.5s forwards;
+            color: rgba(255, 255, 255, 0.7);
         }
         
         .wave {
@@ -147,13 +163,39 @@
                 opacity: 0;
             }
         }
+        
+        @media (max-width: 768px) {
+            .buttons-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .entry-btn {
+                min-width: 250px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>OCEAN SOUND</h1>
-        <div class="version">V 1.01</div>
-        <a href="oceansoundv1_01/index.html" class="enter-btn">ENTER</a>
+        <div class="version">V 1.02</div>
+        
+        <div class="buttons-container">
+            <div>
+                <a href="oceansoundv1_01/midi.html" class="entry-btn">MIDI PIANO</a>
+                <div class="btn-description">Play with MIDI keyboard</div>
+            </div>
+            
+            <div>
+                <a href="oceansoundv1_01/chord.html" class="entry-btn">CHORD GENERATOR</a>
+                <div class="btn-description">Generate chords and rhythms</div>
+            </div>
+        </div>
     </div>
     
     <div class="wave"></div>
